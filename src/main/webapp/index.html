@@ -52,7 +52,7 @@
 
 <h2>2. PersonService – Studie im Stil von gweb (RPC-Stil über HTTP)</h2>
 <p class="hinweis">Dieselben DTOs, aber mit Dienstschnittstelle und Pfaden im RPC-Stil wie in gweb. Kette <code>PersonRestService</code> → <code>PersonRoleService</code> → <code>PersonCacheService</code>
-  → <code>PersonJDBCService</code> mit einer H2-Datenbank im Hauptspeicher. Angemeldet ist für die Demo immer eine
+  → <code>PersonJDBCService</code> mit einem eingebetteten SQL-DBMS (H2) im Hauptspeicher. Angemeldet ist für die Demo immer eine
   Admin-Person (<code>DemoUserStore</code>).</p>
 <table>
   <tr><td>GET</td><td><a href="api/PersonService/getAll">/api/PersonService/getAll</a> – alle Personen</td></tr>

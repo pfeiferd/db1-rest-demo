@@ -3,11 +3,11 @@
 Begleitprojekt zum Kapitel **„Von der Datenbank zum Informationssystem“** der Vorlesung Datenbanken 1.
 Es enthält alle Beispiele der Folien zum Ausprobieren:
 
-- **REST mit Jakarta REST (JAX-RS)** am Beispiel einer Ressource für Personen – ohne Spring,
-  mit der Implementierung Jersey im Servlet-Container Jetty
+- **REST mit JAX-RS (Jakarta REST)** am Beispiel einer Ressource für Personen – ohne Spring,
+  in einem Servlet-Container (hier Jetty) mit einer JAX-RS-Implementierung (hier Jersey)
 - die **Mini-Studie zum `PersonService`** im Stil von [gweb](https://github.com/pfeiferd/gweb):
   Dienstschnittstelle, DTOs, JDBC, Rechteprüfung, Write-Through-Cache und HTTP-Schnittstelle als
-  Delegationskette – mit einer H2-Datenbank im Hauptspeicher
+  Delegationskette – mit einem eingebetteten SQL-DBMS (hier H2), das die Daten im Hauptspeicher hält
 - das **TCP-Beispiel** mit einem Server, der Zeichenketten umdreht
 
 ## Voraussetzungen
@@ -75,7 +75,7 @@ curl -i -X DELETE http://localhost:8080/api/personen/3
 
 ## Weitere Programme
 
-Bei laufendem Server ruft der **Java-Client** die Personen über das Client-API von Jakarta REST ab:
+Bei laufendem Server ruft der **Java-Client** die Personen über die Client-API von JAX-RS ab:
 
 ```bash
 mvn exec:java -Dexec.mainClass=demo.personen.PersonClient
@@ -103,8 +103,8 @@ nach wenigen Sekunden von selbst.
 
 ```
 src/main/java/demo/
-  DemoApplication.java         Jakarta-REST-Anwendung: registriert Ressourcen und baut die Dienstkette
-  DemoDatabase.java            H2-Datenbank im Hauptspeicher mit Tabelle person
+  DemoApplication.java         JAX-RS-Anwendung: registriert Ressourcen und baut die Dienstkette
+  DemoDatabase.java            eingebettetes SQL-DBMS (H2) im Hauptspeicher mit Tabelle person
   personen/                    REST-Ressource: PersonResource, PersonClient
   service/                     Dienstschnittstellen: CRUDService, PersonService, UserService
     dto/                       DTO-Klassen: DTO, Person, User
@@ -115,15 +115,15 @@ src/main/java/demo/
   tcp/                         TCP-Beispiel: Server und Client
 src/main/webapp/
   index.html                   Startseite mit den Demo-Links
-  WEB-INF/web.xml              bindet Jersey unter /api/* ein
+  WEB-INF/web.xml              Deployment-Deskriptor: bindet das JAX-RS-Servlet unter /api/* ein
 ```
 
 Die Delegationskette des `PersonService` (in `DemoApplication`):
 
 ```
-PersonRestService → PersonRoleService → PersonCacheService → PersonJDBCService → H2
+PersonRestService → PersonRoleService → PersonCacheService → PersonJDBCService → SQL-DBMS
 ```
 
 **Vereinfachungen für die Demo:** Angemeldet ist immer dieselbe Admin-Person (`DemoUserStore`) – eine echte
 Anwendung holt den User nach einem Login aus der HTTP-Session. Die `PersonResource` hält ihre Personen nur im Hauptspeicher,
-der `PersonService` in einer H2-Datenbank, die bei jedem Start neu angelegt wird.
+der `PersonService` in einem eingebetteten SQL-DBMS (H2), dessen Datenbank bei jedem Start neu angelegt wird.
