@@ -5,7 +5,7 @@ import javax.sql.DataSource;
 
 import jakarta.ws.rs.core.Application;
 
-import demo.lager.ArtikelartResource;
+import demo.personen.PersonResource;
 import demo.service.PersonService;
 import demo.service.cache.PersonCacheService;
 import demo.service.jdbc.PersonJDBCService;
@@ -36,7 +36,7 @@ public class DemoApplication extends Application {
   /** Klassen, von denen Jersey für jeden Request selbst ein Objekt anlegt. */
   @Override
   public Set<Class<?>> getClasses() {
-    return Set.of(ArtikelartResource.class, ServiceExceptionMapper.class);
+    return Set.of(PersonResource.class, ServiceExceptionMapper.class);
   }
 
   /** Fertige Objekte, die Jersey für alle Requests verwendet. */

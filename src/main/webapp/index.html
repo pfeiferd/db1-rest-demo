@@ -25,33 +25,33 @@
   <code>DELETE</code> schicken die Knöpfe den Request mit JavaScript (<code>fetch</code>) – Request und Response
   erscheinen unten in der Ausgabe.</p>
 
-<h2>1. Artikelarten – ressourcenorientiert (REST)</h2>
-<p class="hinweis">Klasse <code>demo.lager.ArtikelartResource</code>, Daten im Hauptspeicher.</p>
+<h2>1. Personen – ressourcenorientiert (REST)</h2>
+<p class="hinweis">Klasse <code>demo.personen.PersonResource</code>, Daten im Hauptspeicher.</p>
 <table>
-  <tr><td>GET</td><td><a href="api/artikelarten">/api/artikelarten</a> – alle Artikelarten</td></tr>
-  <tr><td>GET</td><td><a href="api/artikelarten?maxGewicht=1">/api/artikelarten?maxGewicht=1</a> – mit Filter (<code>@QueryParam</code>)</td></tr>
-  <tr><td>GET</td><td><a href="api/artikelarten/A1">/api/artikelarten/A1</a> – eine Artikelart (<code>@PathParam</code>)</td></tr>
-  <tr><td>GET</td><td><a href="api/artikelarten/A9">/api/artikelarten/A9</a> – gibt es nicht: <code>404 Not Found</code></td></tr>
+  <tr><td>GET</td><td><a href="api/personen">/api/personen</a> – alle Personen</td></tr>
+  <tr><td>GET</td><td><a href="api/personen?lastName=Turing">/api/personen?lastName=Turing</a> – mit Filter (<code>@QueryParam</code>)</td></tr>
+  <tr><td>GET</td><td><a href="api/personen/1">/api/personen/1</a> – eine Person (<code>@PathParam</code>)</td></tr>
+  <tr><td>GET</td><td><a href="api/personen/99">/api/personen/99</a> – gibt es nicht: <code>404 Not Found</code></td></tr>
   <tr><td>POST</td><td>
-    <textarea id="post-body">{"aid": "A4", "aname": "Kaffee", "gewicht": 0.5}</textarea>
-    <button onclick="senden('POST', 'api/artikelarten', wert('post-body'))">POST /api/artikelarten</button>
-    – anlegen: <code>201 Created</code> mit <code>Location</code>; mit <code>"gewicht": 0</code> gibt es <code>400 Bad Request</code>
+    <textarea id="post-body">{"firstName": "Grace", "lastName": "Hopper"}</textarea>
+    <button onclick="senden('POST', 'api/personen', wert('post-body'))">POST /api/personen</button>
+    – anlegen: <code>201 Created</code> mit <code>Location</code>; ohne <code>lastName</code> gibt es <code>400 Bad Request</code>
   </td></tr>
   <tr><td>PUT</td><td>
-    <textarea id="put-body">{"aname": "Kaffee, gemahlen", "gewicht": 0.5}</textarea>
-    /api/artikelarten/<input type="text" id="put-aid" value="A4">
-    <button onclick="senden('PUT', 'api/artikelarten/' + wert('put-aid'), wert('put-body'))">PUT</button>
+    <textarea id="put-body">{"firstName": "Grace", "lastName": "Murray Hopper"}</textarea>
+    /api/personen/<input type="text" id="put-id" value="3">
+    <button onclick="senden('PUT', 'api/personen/' + wert('put-id'), wert('put-body'))">PUT</button>
     – ändern (zweimal hintereinander: gleiches Ergebnis, idempotent)
   </td></tr>
   <tr><td>DELETE</td><td>
-    /api/artikelarten/<input type="text" id="del-aid" value="A4">
-    <button onclick="senden('DELETE', 'api/artikelarten/' + wert('del-aid'))">DELETE</button>
+    /api/personen/<input type="text" id="del-id" value="3">
+    <button onclick="senden('DELETE', 'api/personen/' + wert('del-id'))">DELETE</button>
     – löschen: <code>204 No Content</code>, beim zweiten Mal <code>404</code>
   </td></tr>
 </table>
 
 <h2>2. PersonService – Studie im Stil von gweb (RPC-Stil über HTTP)</h2>
-<p class="hinweis">Kette <code>PersonRestService</code> → <code>PersonRoleService</code> → <code>PersonCacheService</code>
+<p class="hinweis">Dieselben DTOs, aber mit Dienstschnittstelle und Pfaden im RPC-Stil wie in gweb. Kette <code>PersonRestService</code> → <code>PersonRoleService</code> → <code>PersonCacheService</code>
   → <code>PersonJDBCService</code> mit einer H2-Datenbank im Hauptspeicher. Angemeldet ist für die Demo immer eine
   Admin-Person (<code>DemoUserStore</code>).</p>
 <table>

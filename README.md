@@ -3,7 +3,7 @@
 Begleitprojekt zum Kapitel **„Von der Datenbank zum Informationssystem“** der Vorlesung Datenbanken 1.
 Es enthält alle Beispiele der Folien zum Ausprobieren:
 
-- **REST mit Jakarta REST (JAX-RS)** am Beispiel der Artikelarten aus der Lagerverwaltung – ohne Spring,
+- **REST mit Jakarta REST (JAX-RS)** am Beispiel einer Ressource für Personen – ohne Spring,
   mit der Implementierung Jersey im Servlet-Container Jetty
 - die **Mini-Studie zum `PersonService`** im Stil von [gweb](https://github.com/pfeiferd/gweb):
   Dienstschnittstelle, DTOs, JDBC, Rechteprüfung, Write-Through-Cache und HTTP-Schnittstelle als
@@ -40,14 +40,14 @@ mvn jetty:run -Djetty.port=8081
 
 ## Direkt ausprobieren
 
-Artikelarten (ressourcenorientiert):
+Personen (ressourcenorientiert):
 
 | Request | Ergebnis |
 |---|---|
-| [GET /api/artikelarten](http://localhost:8080/api/artikelarten) | alle Artikelarten |
-| [GET /api/artikelarten?maxGewicht=1](http://localhost:8080/api/artikelarten?maxGewicht=1) | gefiltert |
-| [GET /api/artikelarten/A1](http://localhost:8080/api/artikelarten/A1) | eine Artikelart |
-| [GET /api/artikelarten/A9](http://localhost:8080/api/artikelarten/A9) | `404 Not Found` |
+| [GET /api/personen](http://localhost:8080/api/personen) | alle Personen |
+| [GET /api/personen?lastName=Turing](http://localhost:8080/api/personen?lastName=Turing) | gefiltert |
+| [GET /api/personen/1](http://localhost:8080/api/personen/1) | eine Person |
+| [GET /api/personen/99](http://localhost:8080/api/personen/99) | `404 Not Found` |
 
 PersonService (im Stil von gweb):
 
@@ -60,25 +60,25 @@ PersonService (im Stil von gweb):
 Mit `curl` im Terminal:
 
 ```bash
-curl http://localhost:8080/api/artikelarten/A1
+curl http://localhost:8080/api/personen/1
 
 curl -i -X POST -H 'Content-Type: application/json' \
-  -d '{"aid":"A4","aname":"Kaffee","gewicht":0.5}' \
-  http://localhost:8080/api/artikelarten
+  -d '{"firstName":"Grace","lastName":"Hopper"}' \
+  http://localhost:8080/api/personen
 
 curl -i -X PUT -H 'Content-Type: application/json' \
-  -d '{"aname":"Kaffee, gemahlen","gewicht":0.5}' \
-  http://localhost:8080/api/artikelarten/A4
+  -d '{"firstName":"Grace","lastName":"Murray Hopper"}' \
+  http://localhost:8080/api/personen/3
 
-curl -i -X DELETE http://localhost:8080/api/artikelarten/A4
+curl -i -X DELETE http://localhost:8080/api/personen/3
 ```
 
 ## Weitere Programme
 
-Bei laufendem Server ruft der **Java-Client** die Artikelarten über das Client-API von Jakarta REST ab:
+Bei laufendem Server ruft der **Java-Client** die Personen über das Client-API von Jakarta REST ab:
 
 ```bash
-mvn exec:java -Dexec.mainClass=demo.lager.ArtikelartClient
+mvn exec:java -Dexec.mainClass=demo.personen.PersonClient
 ```
 
 Das **TCP-Beispiel** braucht zwei Terminals:
@@ -93,7 +93,7 @@ mvn exec:java -Dexec.mainClass=demo.tcp.Client -Dexec.args=Datenbank   # Termina
 1. *File → Open…* und den Projektordner (mit der `pom.xml`) wählen – IntelliJ erkennt das Maven-Projekt
 2. Im Maven-Fenster (rechts) unter *Plugins → jetty* doppelt auf **`jetty:run`** klicken – oder im
    Terminal von IntelliJ `mvn jetty:run` eingeben
-3. Die Klassen `ArtikelartClient`, `tcp.Server` und `tcp.Client` lassen sich direkt über ihre
+3. Die Klassen `PersonClient`, `tcp.Server` und `tcp.Client` lassen sich direkt über ihre
    `main`-Methode starten (grüner Pfeil am Rand)
 
 Änderungen am Java-Code übernimmt `jetty:run` nach dem Neukompilieren (*Build → Build Project*)
@@ -105,7 +105,7 @@ nach wenigen Sekunden von selbst.
 src/main/java/demo/
   DemoApplication.java         Jakarta-REST-Anwendung: registriert Ressourcen und baut die Dienstkette
   DemoDatabase.java            H2-Datenbank im Hauptspeicher mit Tabelle person
-  lager/                       Artikelarten: Artikelart, ArtikelartResource, ArtikelartClient
+  personen/                    REST-Ressource: PersonResource, PersonClient
   service/                     Dienstschnittstellen: CRUDService, PersonService, UserService
     dto/                       DTO-Klassen: DTO, Person, User
     jdbc/                      Datenzugriff: PersonJDBCService
@@ -125,5 +125,5 @@ PersonRestService → PersonRoleService → PersonCacheService → PersonJDBCSer
 ```
 
 **Vereinfachungen für die Demo:** Angemeldet ist immer dieselbe Admin-Person (`DemoUserStore`) – eine echte
-Anwendung holt den User nach einem Login aus der HTTP-Session. Die Artikelarten liegen nur im Hauptspeicher,
-die Personen in einer H2-Datenbank, die bei jedem Start neu angelegt wird.
+Anwendung holt den User nach einem Login aus der HTTP-Session. Die `PersonResource` hält ihre Personen nur im Hauptspeicher,
+der `PersonService` in einer H2-Datenbank, die bei jedem Start neu angelegt wird.

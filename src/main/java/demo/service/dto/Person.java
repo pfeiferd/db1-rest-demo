@@ -4,6 +4,15 @@ public class Person extends DTO {
   private String firstName;
   private String lastName;
 
+  public Person() {         // nötig, damit aus JSON ein Objekt entstehen kann
+  }
+
+  public Person(long id, String firstName, String lastName) {
+    setId(id);
+    this.firstName = firstName;
+    this.lastName = lastName;
+  }
+
   public String getFirstName() { return firstName; }
   public void setFirstName(String firstName) { this.firstName = firstName; }
   public String getLastName() { return lastName; }
