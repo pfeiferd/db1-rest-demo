@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.hs-heilbronn.db1</groupId>
+  <artifactId>db1-rest-demo</artifactId>
+  <version>1.0</version>
+  <packaging>war</packaging>
+  <name>DB1: REST-Demo zu „Von der Datenbank zum Informationssystem“</name>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jersey.version>3.1.9</jersey.version>
+    <jetty.version>12.0.16</jetty.version>
+    <!-- Port für mvn jetty:run, änderbar mit -Djetty.port=… -->
+    <jetty.port>8080</jetty.port>
+  </properties>
+
+  <dependencies>
+    <!-- Jakarta REST (JAX-RS) mit der Implementierung Jersey im Servlet-Container -->
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.inject</groupId>
+      <artifactId>jersey-hk2</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- Umwandlung zwischen Java-Objekten und JSON (JSON-B) -->
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-json-binding</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- Datenbank im Hauptspeicher für die Studie mit PersonService -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.3.232</version>
+    </dependency>
+    <!-- Client-API von Jakarta REST für ArtikelartClient -->
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-client</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- stellt Jetty zur Laufzeit bereit -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- mvn jetty:run startet die Anwendung unter http://localhost:8080/ -->
+      <plugin>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-maven-plugin</artifactId>
+        <version>${jetty.version}</version>
+        <configuration>
+          <webApp>
+            <contextPath>/</contextPath>
+          </webApp>
+          <httpConnector>
+            <port>${jetty.port}</port>
+          </httpConnector>
+          <scan>2</scan>
+        </configuration>
+      </plugin>
+      <!-- mvn exec:java -Dexec.mainClass=… für TCP-Beispiel und Client -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>DB1 – REST-Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 70rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.45; }
+    h1 { margin-bottom: 0.2rem; }
+    h2 { margin-top: 2rem; border-bottom: 2px solid #ddd; padding-bottom: 0.2rem; }
+    code, pre, textarea, input { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.95rem; }
+    table { border-collapse: collapse; width: 100%; }
+    td { padding: 0.35rem 0.5rem; vertical-align: top; border-bottom: 1px solid #eee; }
+    td:first-child { white-space: nowrap; font-weight: 600; width: 6rem; }
+    button { padding: 0.3rem 0.8rem; cursor: pointer; }
+    textarea { width: 100%; height: 3.2rem; }
+    input[type=text] { width: 7rem; }
+    #ausgabe { background: #1e1e1e; color: #e8e8e8; padding: 0.8rem; border-radius: 6px; white-space: pre-wrap; min-height: 6rem; }
+    .hinweis { color: #555; }
+  </style>
+</head>
+<body>
+<h1>DB1 – REST-Demo</h1>
+<p class="hinweis">Begleitprojekt zum Kapitel „Von der Datenbank zum Informationssystem“.
+  Lesende Operationen (<code>GET</code>) sind einfache Links. Für <code>POST</code>, <code>PUT</code> und
+  <code>DELETE</code> schicken die Knöpfe den Request mit JavaScript (<code>fetch</code>) – Request und Response
+  erscheinen unten in der Ausgabe.</p>
+
+<h2>1. Artikelarten – ressourcenorientiert (REST)</h2>
+<p class="hinweis">Klasse <code>demo.lager.ArtikelartResource</code>, Daten im Hauptspeicher.</p>
+<table>
+  <tr><td>GET</td><td><a href="api/artikelarten">/api/artikelarten</a> – alle Artikelarten</td></tr>
+  <tr><td>GET</td><td><a href="api/artikelarten?maxGewicht=1">/api/artikelarten?maxGewicht=1</a> – mit Filter (<code>@QueryParam</code>)</td></tr>
+  <tr><td>GET</td><td><a href="api/artikelarten/A1">/api/artikelarten/A1</a> – eine Artikelart (<code>@PathParam</code>)</td></tr>
+  <tr><td>GET</td><td><a href="api/artikelarten/A9">/api/artikelarten/A9</a> – gibt es nicht: <code>404 Not Found</code></td></tr>
+  <tr><td>POST</td><td>
+    <textarea id="post-body">{"aid": "A4", "aname": "Kaffee", "gewicht": 0.5}</textarea>
+    <button onclick="senden('POST', 'api/artikelarten', wert('post-body'))">POST /api/artikelarten</button>
+    – anlegen: <code>201 Created</code> mit <code>Location</code>; mit <code>"gewicht": 0</code> gibt es <code>400 Bad Request</code>
+  </td></tr>
+  <tr><td>PUT</td><td>
+    <textarea id="put-body">{"aname": "Kaffee, gemahlen", "gewicht": 0.5}</textarea>
+    /api/artikelarten/<input type="text" id="put-aid" value="A4">
+    <button onclick="senden('PUT', 'api/artikelarten/' + wert('put-aid'), wert('put-body'))">PUT</button>
+    – ändern (zweimal hintereinander: gleiches Ergebnis, idempotent)
+  </td></tr>
+  <tr><td>DELETE</td><td>
+    /api/artikelarten/<input type="text" id="del-aid" value="A4">
+    <button onclick="senden('DELETE', 'api/artikelarten/' + wert('del-aid'))">DELETE</button>
+    – löschen: <code>204 No Content</code>, beim zweiten Mal <code>404</code>
+  </td></tr>
+</table>
+
+<h2>2. PersonService – Studie im Stil von gweb (RPC-Stil über HTTP)</h2>
+<p class="hinweis">Kette <code>PersonRestService</code> → <code>PersonRoleService</code> → <code>PersonCacheService</code>
+  → <code>PersonJDBCService</code> mit einer H2-Datenbank im Hauptspeicher. Angemeldet ist für die Demo immer eine
+  Admin-Person (<code>DemoUserStore</code>).</p>
+<table>
+  <tr><td>GET</td><td><a href="api/PersonService/getAll">/api/PersonService/getAll</a> – alle Personen</td></tr>
+  <tr><td>GET</td><td><a href="api/PersonService/get/1">/api/PersonService/get/1</a> – eine Person (zweiter Aufruf kommt aus dem Cache)</td></tr>
+  <tr><td>GET</td><td><a href="api/PersonService/get/99">/api/PersonService/get/99</a> – gibt es nicht: <code>404</code></td></tr>
+  <tr><td>POST</td><td>
+    <textarea id="pcreate-body">{"firstName": "Edgar F.", "lastName": "Codd"}</textarea>
+    <button onclick="senden('POST', 'api/PersonService/create', wert('pcreate-body'))">POST /api/PersonService/create</button>
+    – liefert die neue ID
+  </td></tr>
+  <tr><td>PUT</td><td>
+    <textarea id="pupdate-body">{"id": 1, "firstName": "Ada", "lastName": "King"}</textarea>
+    <button onclick="senden('PUT', 'api/PersonService/update', wert('pupdate-body'))">PUT /api/PersonService/update</button>
+    – Write-Through: erst Datenbank, dann Cache
+  </td></tr>
+  <tr><td>DELETE</td><td>
+    /api/PersonService/remove/<input type="text" id="pdel-id" value="2">
+    <button onclick="senden('DELETE', 'api/PersonService/remove/' + wert('pdel-id'))">DELETE</button>
+  </td></tr>
+</table>
+
+<h2>Ausgabe</h2>
+<div id="ausgabe">Noch kein Request gesendet.</div>
+
+<script>
+  function wert(id) {
+    return document.getElementById(id).value;
+  }
+
+  async function senden(methode, pfad, rumpf) {
+    const ausgabe = document.getElementById('ausgabe');
+    const optionen = { method: methode, headers: {} };
+    if (rumpf !== undefined) {
+      optionen.headers['Content-Type'] = 'application/json';
+      optionen.body = rumpf;
+    }
+    let text = methode + ' /' + pfad + (rumpf !== undefined ? '\n\n' + rumpf : '') + '\n\n';
+    try {
+      const response = await fetch(pfad, optionen);
+      text += response.status + ' ' + response.statusText + '\n';
+      const location = response.headers.get('Location');
+      if (location) {
+        text += 'Location: ' + location + '\n';
+      }
+      const inhalt = await response.text();
+      text += inhalt ? '\n' + inhalt : '';
+    } catch (e) {
+      text += 'Fehler: ' + e;
+    }
+    ausgabe.textContent = text;
+  }
+</script>
+</body>
+</html>
