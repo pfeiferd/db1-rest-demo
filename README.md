@@ -138,7 +138,8 @@ src/main/java/demo/
   service/                     Dienstschnittstellen: CRUDService, PersonService, UserService, KontoService
     dto/                       DTO-Klassen: DTO, Person, User, Konto, Girokonto, Sparkonto
     jdbc/                      Datenzugriff mit JDBC: PersonJDBCService, KontoJDBCService
-    jpa/                       Datenzugriff mit JPA: PersonJPAService, KontoJPAService, Entities, JpaDemo
+    jpa/                       Datenzugriff mit JPA: PersonJPAService, KontoJPAService, Entities,
+                               ConversionService (DTO <-> Entity), JpaDemo
     role/                      Rechteprüfung: PersonRoleService, UserStore, DemoUserStore
     cache/                     Write-Through-Cache: PersonCacheService
     rest/                      HTTP-Schnittstelle: PersonRestService, ServiceExceptionMapper

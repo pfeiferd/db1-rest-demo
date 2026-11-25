@@ -8,7 +8,8 @@ import demo.service.PersonService;
 import demo.service.dto.Person;
 
 /** Dieselbe Schnittstelle wie PersonJDBCService – mit JPA statt JDBC. */
-public class PersonJPAService implements PersonService {
+public class PersonJPAService implements PersonService,
+    ConversionService<Person, PersonEntity> {
   private final EntityManagerFactory emf;
 
   public PersonJPAService(EntityManagerFactory emf) {
@@ -17,12 +18,12 @@ public class PersonJPAService implements PersonService {
 
   @Override
   public Person get(long id) {
-    return emf.callInTransaction(em -> toDto(find(em, id)));
+    return emf.callInTransaction(em -> toDTO(find(em, id)));
   }
 
   @Override
   public long create(Person p) {
-    PersonEntity e = new PersonEntity(p.getFirstName(), p.getLastName());
+    PersonEntity e = fromDTO(p);
     emf.runInTransaction(em -> em.persist(e));        // INSERT
     p.setId(e.getId());
     return p.getId();
@@ -33,7 +34,7 @@ public class PersonJPAService implements PersonService {
     return emf.callInTransaction(em -> em
         .createQuery("SELECT p FROM Person p ORDER BY p.id", PersonEntity.class)
         .getResultStream()
-        .map(PersonJPAService::toDto)
+        .map(this::toDTO)
         .toArray(Person[]::new));
   }
 
@@ -59,7 +60,13 @@ public class PersonJPAService implements PersonService {
     return e;
   }
 
-  private static Person toDto(PersonEntity e) {      // Entity → DTO
+  @Override
+  public PersonEntity fromDTO(Person p) {              // DTO → Entity
+    return new PersonEntity(p.getFirstName(), p.getLastName());
+  }
+
+  @Override
+  public Person toDTO(PersonEntity e) {                // Entity → DTO
     return new Person(e.getId(), e.getFirstName(), e.getLastName());
   }
 }

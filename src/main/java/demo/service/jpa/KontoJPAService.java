@@ -17,7 +17,8 @@ import demo.service.dto.Konto;
 import demo.service.dto.Sparkonto;
 
 /** Dieselbe Schnittstelle wie KontoJDBCService – mit JPA statt JDBC. */
-public class KontoJPAService implements KontoService {
+public class KontoJPAService implements KontoService,
+    ConversionService<Konto, KontoEntity> {
   private final EntityManagerFactory emf;
 
   public KontoJPAService(EntityManagerFactory emf) {
@@ -26,7 +27,7 @@ public class KontoJPAService implements KontoService {
 
   @Override
   public Konto get(long id) {
-    return emf.callInTransaction(em -> toDto(find(em, id)));
+    return emf.callInTransaction(em -> toDTO(find(em, id)));
   }
 
   @Override
@@ -34,19 +35,17 @@ public class KontoJPAService implements KontoService {
     return emf.callInTransaction(em -> em
         .createQuery("SELECT k FROM Konto k ORDER BY k.id", KontoEntity.class)
         .getResultStream()
-        .map(KontoJPAService::toDto)
+        .map(this::toDTO)
         .toArray(Konto[]::new));
   }
 
   @Override
   public long create(Konto k) {
-    KontoEntity e = emf.callInTransaction(em -> {
-      PersonEntity inhaber = em.getReference(PersonEntity.class, k.getPersonId());
-      KontoEntity neu = k instanceof Girokonto g
-          ? new GirokontoEntity(inhaber, g.getSaldo(), g.getDispo())
-          : new SparkontoEntity(inhaber, k.getSaldo(), ((Sparkonto) k).getZinssatz());
-      em.persist(neu);
-      return neu;
+    KontoEntity e = fromDTO(k);
+    emf.runInTransaction(em -> {
+      // Die Referenz auf die Person braucht den EntityManager
+      e.setInhaber(em.getReference(PersonEntity.class, k.getPersonId()));
+      em.persist(e);
     });
     k.setId(e.getId());
     k.setVersion(e.getVersion());
@@ -111,7 +110,15 @@ public class KontoJPAService implements KontoService {
     return e;
   }
 
-  private static Konto toDto(KontoEntity e) {         // Entity → DTO
+  @Override
+  public KontoEntity fromDTO(Konto k) {               // DTO → Entity, ohne Inhaber
+    return k instanceof Girokonto g
+        ? new GirokontoEntity(null, g.getSaldo(), g.getDispo())
+        : new SparkontoEntity(null, k.getSaldo(), ((Sparkonto) k).getZinssatz());
+  }
+
+  @Override
+  public Konto toDTO(KontoEntity e) {                 // Entity → DTO
     Konto k;
     if (e instanceof GirokontoEntity g) {
       Girokonto dto = new Girokonto();
