@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
+import demo.service.ConflictException;
 import demo.service.NotFoundException;
 import demo.service.ServiceException;
 import demo.service.role.MissingRightException;
@@ -19,6 +20,8 @@ public class ServiceExceptionMapper implements ExceptionMapper<ServiceException>
       status = Response.Status.NOT_FOUND;            // 404
     } else if (e instanceof MissingRightException) {
       status = Response.Status.FORBIDDEN;            // 403
+    } else if (e instanceof ConflictException) {
+      status = Response.Status.CONFLICT;             // 409
     } else {
       status = Response.Status.INTERNAL_SERVER_ERROR; // 500
     }

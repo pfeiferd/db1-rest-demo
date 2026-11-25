@@ -53,7 +53,8 @@
 <h2>2. PersonService – Studie im Stil von gweb (RPC-Stil über HTTP)</h2>
 <p class="hinweis">Dieselben DTOs, aber mit Dienstschnittstelle und Pfaden im RPC-Stil wie in gweb. Kette <code>PersonRestService</code> → <code>PersonRoleService</code> → <code>PersonCacheService</code>
   → <code>PersonJDBCService</code> mit einem eingebetteten SQL-DBMS (H2) im Hauptspeicher. Angemeldet ist für die Demo immer eine
-  Admin-Person (<code>DemoUserStore</code>).</p>
+  Admin-Person (<code>DemoUserStore</code>). Gestartet mit <code>mvn jetty:run -Dpersistence=jpa</code> greift
+  statt des <code>PersonJDBCService</code> der <code>PersonJPAService</code> zu – das erzeugte SQL steht dann im Terminal.</p>
 <table>
   <tr><td>GET</td><td><a href="api/PersonService/getAll">/api/PersonService/getAll</a> – alle Personen</td></tr>
   <tr><td>GET</td><td><a href="api/PersonService/get/1">/api/PersonService/get/1</a> – eine Person (zweiter Aufruf kommt aus dem Cache)</td></tr>

@@ -8,6 +8,8 @@ Es enthält alle Beispiele der Folien zum Ausprobieren:
 - die **Mini-Studie zum `PersonService`** im Stil von [gweb](https://github.com/pfeiferd/gweb):
   Dienstschnittstelle, DTOs, JDBC, Rechteprüfung, Write-Through-Cache und HTTP-Schnittstelle als
   Delegationskette – mit einem eingebetteten SQL-DBMS (hier H2), das die Daten im Hauptspeicher hält
+- dieselbe Studie mit **O/R-Abbildung (JPA)** statt JDBC: `PersonJPAService` neben `PersonJDBCService`
+  zum direkten Vergleich, dazu ein Programm, das N+1-Problem, Lazy Loading und `@Version` im SQL-Protokoll zeigt
 - das **TCP-Beispiel** mit einem Server, der Zeichenketten umdreht
 
 ## Voraussetzungen
@@ -15,7 +17,7 @@ Es enthält alle Beispiele der Folien zum Ausprobieren:
 - **Java 17** oder neuer (`java -version`)
 - **Maven 3.8** oder neuer (`mvn -version`) – in IntelliJ bereits enthalten
 
-Alles Weitere (Jetty, Jersey, H2, …) lädt Maven beim ersten Start automatisch herunter.
+Alles Weitere (Jetty, Jersey, Hibernate, H2, …) lädt Maven beim ersten Start automatisch herunter.
 
 ## Starten
 
@@ -73,6 +75,32 @@ curl -i -X PUT -H 'Content-Type: application/json' \
 curl -i -X DELETE http://localhost:8080/api/personen/3
 ```
 
+## JPA statt JDBC
+
+Standardmäßig greift der `PersonService` mit JDBC auf die Datenbank zu (`PersonJDBCService`).
+Mit JPA (`PersonJPAService`, Implementierung Hibernate) startet man so:
+
+```bash
+mvn jetty:run -Dpersistence=jpa
+```
+
+URLs und Startseite bleiben gleich. Im Terminal erscheint jede SQL-Anweisung, die Hibernate erzeugt.
+
+Die prinzipiellen Probleme der O/R-Abbildung – N+1-Problem, `JOIN FETCH`, Objektidentität,
+Lazy Loading ohne Persistence Context, zur Laufzeit erzeugte Proxy-Klassen, optimistisches Sperren mit `@Version` – zeigt ein eigenes Programm:
+
+```bash
+mvn exec:java -Dexec.mainClass=demo.service.jpa.JpaDemo
+```
+
+Ein zweites Beispiel – **Konten** mit Vererbung (`Girokonto`, `Sparkonto`, eine Tabelle pro konkreter Klasse),
+Versionsnummer im DTO und einer Überweisung mit zwei `UPDATE`s in einer Transaktion – gibt es ebenfalls
+mit JDBC (`KontoJDBCService`) und mit JPA (`KontoJPAService`). Beide führt ein Programm nacheinander vor:
+
+```bash
+mvn exec:java -Dexec.mainClass=demo.KontoDemo
+```
+
 ## Weitere Programme
 
 Bei laufendem Server ruft der **Java-Client** die Personen über die Client-API von JAX-RS ab:
@@ -104,15 +132,19 @@ nach wenigen Sekunden von selbst.
 ```
 src/main/java/demo/
   DemoApplication.java         JAX-RS-Anwendung: registriert Ressourcen und baut die Dienstkette
-  DemoDatabase.java            eingebettetes SQL-DBMS (H2) im Hauptspeicher mit Tabelle person
+  DemoDatabase.java            eingebettetes SQL-DBMS (H2) im Hauptspeicher: person, app_user, girokonto, sparkonto
+  KontoDemo.java               Konten mit JDBC und mit JPA im Vergleich
   personen/                    REST-Ressource: PersonResource, PersonClient
-  service/                     Dienstschnittstellen: CRUDService, PersonService, UserService
-    dto/                       DTO-Klassen: DTO, Person, User
-    jdbc/                      Datenzugriff: PersonJDBCService
+  service/                     Dienstschnittstellen: CRUDService, PersonService, UserService, KontoService
+    dto/                       DTO-Klassen: DTO, Person, User, Konto, Girokonto, Sparkonto
+    jdbc/                      Datenzugriff mit JDBC: PersonJDBCService, KontoJDBCService
+    jpa/                       Datenzugriff mit JPA: PersonJPAService, KontoJPAService, Entities, JpaDemo
     role/                      Rechteprüfung: PersonRoleService, UserStore, DemoUserStore
     cache/                     Write-Through-Cache: PersonCacheService
     rest/                      HTTP-Schnittstelle: PersonRestService, ServiceExceptionMapper
   tcp/                         TCP-Beispiel: Server und Client
+src/main/resources/META-INF/
+  persistence.xml              Persistence Unit für JPA
 src/main/webapp/
   index.html                   Startseite mit den Demo-Links
   WEB-INF/web.xml              Deployment-Deskriptor: bindet das JAX-RS-Servlet unter /api/* ein
@@ -121,7 +153,7 @@ src/main/webapp/
 Die Delegationskette des `PersonService` (in `DemoApplication`):
 
 ```
-PersonRestService → PersonRoleService → PersonCacheService → PersonJDBCService → SQL-DBMS
+PersonRestService → PersonRoleService → PersonCacheService → PersonJDBCService (oder PersonJPAService) → SQL-DBMS
 ```
 
 **Vereinfachungen für die Demo:** Angemeldet ist immer dieselbe Admin-Person (`DemoUserStore`) – eine echte

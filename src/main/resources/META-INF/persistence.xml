@@ -1,0 +1,16 @@
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.2">
+  <persistence-unit name="db1" transaction-type="RESOURCE_LOCAL">
+    <class>demo.service.jpa.PersonEntity</class>
+    <class>demo.service.jpa.UserEntity</class>
+    <class>demo.service.jpa.KontoEntity</class>
+    <class>demo.service.jpa.GirokontoEntity</class>
+    <class>demo.service.jpa.SparkontoEntity</class>
+    <exclude-unlisted-classes>true</exclude-unlisted-classes>
+    <properties>
+      <!-- Das Schema legt DemoDatabase an - Hibernate prüft nur, ob es passt -->
+      <property name="hibernate.hbm2ddl.auto" value="validate"/>
+      <!-- jede erzeugte SQL-Anweisung auf der Konsole zeigen -->
+      <property name="hibernate.show_sql" value="true"/>
+    </properties>
+  </persistence-unit>
+</persistence>
