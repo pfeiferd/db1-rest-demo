@@ -2,12 +2,12 @@
   <persistence-unit name="db1" transaction-type="RESOURCE_LOCAL">
     <class>demo.service.jpa.PersonEntity</class>
     <class>demo.service.jpa.UserEntity</class>
-    <class>demo.service.jpa.KontoEntity</class>
-    <class>demo.service.jpa.GirokontoEntity</class>
-    <class>demo.service.jpa.SparkontoEntity</class>
+    <class>demo.service.jpa.AccountEntity</class>
+    <class>demo.service.jpa.CheckingAccountEntity</class>
+    <class>demo.service.jpa.SavingsAccountEntity</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
-      <!-- Das Schema legt DemoDatabase an - Hibernate prüft nur, ob es passt -->
+      <!-- Schema von DemoDatabase: JPA prüft nur, ob es passt -->
       <property name="hibernate.hbm2ddl.auto" value="validate"/>
       <!-- jede erzeugte SQL-Anweisung auf der Konsole zeigen -->
       <property name="hibernate.show_sql" value="true"/>

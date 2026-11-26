@@ -85,20 +85,29 @@ mvn jetty:run -Dpersistence=jpa
 ```
 
 URLs und Startseite bleiben gleich. Im Terminal erscheint jede SQL-Anweisung, die Hibernate erzeugt.
+Ein DDL-Skript gibt es dabei nicht: Hibernate legt das Schema beim Start aus den Annotationen an
+(die DDL steht danach auch in `target/schema.sql`) und speichert die Beispieldaten per `persist()`.
+
+Einen Rundgang durch die Features von JPA – Schema anlegen, speichern, Lazy Loading, ändern,
+`JOIN FETCH`, löschen – mit dem SQL zu jedem Schritt zeigt:
+
+```bash
+mvn exec:java -Dexec.mainClass=demo.service.jpa.JpaTour
+```
 
 Die prinzipiellen Probleme der O/R-Abbildung – N+1-Problem, `JOIN FETCH`, Objektidentität,
-Lazy Loading ohne Persistence Context, zur Laufzeit erzeugte Proxy-Klassen, optimistisches Sperren mit `@Version` – zeigt ein eigenes Programm:
+Lazy Loading ohne Persistence Context, zur Laufzeit erzeugte Proxy-Klassen, optimistisches Sperren mit `@Version`, entkoppelte Objekte – zeigt ein eigenes Programm:
 
 ```bash
 mvn exec:java -Dexec.mainClass=demo.service.jpa.JpaDemo
 ```
 
-Ein zweites Beispiel – **Konten** mit Vererbung (`Girokonto`, `Sparkonto`, eine Tabelle pro konkreter Klasse),
+Ein zweites Beispiel – **Konten** mit Vererbung (`CheckingAccount` für Girokonten, `SavingsAccount` für Sparkonten, eine Tabelle pro konkreter Klasse),
 Versionsnummer im DTO und einer Überweisung mit zwei `UPDATE`s in einer Transaktion – gibt es ebenfalls
-mit JDBC (`KontoJDBCService`) und mit JPA (`KontoJPAService`). Beide führt ein Programm nacheinander vor:
+mit JDBC (`AccountJDBCService`) und mit JPA (`AccountJPAService`). Beide führt ein Programm nacheinander vor:
 
 ```bash
-mvn exec:java -Dexec.mainClass=demo.KontoDemo
+mvn exec:java -Dexec.mainClass=demo.AccountDemo
 ```
 
 ## Weitere Programme
@@ -132,14 +141,15 @@ nach wenigen Sekunden von selbst.
 ```
 src/main/java/demo/
   DemoApplication.java         JAX-RS-Anwendung: registriert Ressourcen und baut die Dienstkette
-  DemoDatabase.java            eingebettetes SQL-DBMS (H2) im Hauptspeicher: person, app_user, girokonto, sparkonto
-  KontoDemo.java               Konten mit JDBC und mit JPA im Vergleich
+  DemoDatabase.java            eingebettetes SQL-DBMS (H2) im Hauptspeicher: person, app_user, checking_account, savings_account
+                               (für JDBC per SQL-Skript, für JPA aus den Annotationen)
+  AccountDemo.java             Konten mit JDBC und mit JPA im Vergleich
   personen/                    REST-Ressource: PersonResource, PersonClient
-  service/                     Dienstschnittstellen: CRUDService, PersonService, UserService, KontoService
-    dto/                       DTO-Klassen: DTO, Person, User, Konto, Girokonto, Sparkonto
-    jdbc/                      Datenzugriff mit JDBC: PersonJDBCService, KontoJDBCService
-    jpa/                       Datenzugriff mit JPA: PersonJPAService, KontoJPAService, Entities,
-                               ConversionService (DTO <-> Entity), JpaDemo
+  service/                     Dienstschnittstellen: CRUDService, PersonService, UserService, AccountService
+    dto/                       DTO-Klassen: DTO, Person, User, Account, CheckingAccount, SavingsAccount
+    jdbc/                      Datenzugriff mit JDBC: PersonJDBCService, AccountJDBCService
+    jpa/                       Datenzugriff mit JPA: PersonJPAService, AccountJPAService, Entities,
+                               ConversionService (DTO <-> Entity), JpaDemo, JpaTour
     role/                      Rechteprüfung: PersonRoleService, UserStore, DemoUserStore
     cache/                     Write-Through-Cache: PersonCacheService
     rest/                      HTTP-Schnittstelle: PersonRestService, ServiceExceptionMapper

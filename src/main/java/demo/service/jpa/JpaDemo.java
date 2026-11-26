@@ -53,9 +53,10 @@ public class JpaDemo {
       emf.runInTransaction(em -> {
         UserEntity u = em.find(UserEntity.class, 1L);
         PersonEntity p = u.getPerson();                 // noch nicht geladen
-        System.out.println("u.getPerson():  " + p.getClass().getName());
-        System.out.println("Nachname:       " + p.getLastName());   // jetzt erst SELECT
-        System.out.println("p.getLogins():  " + p.getLogins().getClass().getName());
+        System.out.println("u.getPerson(): " + p.getClass().getName());
+        // erst getLastName() löst das SELECT aus
+        System.out.println("Nachname:      " + p.getLastName());
+        System.out.println("p.getLogins(): " + p.getLogins().getClass().getName());
       });
 
       schritt("6. Optimistisches Sperren mit @Version");
@@ -63,18 +64,31 @@ public class JpaDemo {
            EntityManager em2 = emf.createEntityManager()) {
         em1.getTransaction().begin();
         em2.getTransaction().begin();
-        PersonEntity p1 = em1.find(PersonEntity.class, 1L);   // beide lesen Version 0
+        PersonEntity p1 = em1.find(PersonEntity.class, 1L); // beide lesen Version 0
         PersonEntity p2 = em2.find(PersonEntity.class, 1L);
         p1.setLastName("King");
-        em1.getTransaction().commit();                         // Version 0 -> 1
+        em1.getTransaction().commit();                      // Version 0 -> 1
         p2.setFirstName("Augusta Ada");
         try {
-          em2.getTransaction().commit();                       // erwartet noch Version 0
+          em2.getTransaction().commit();                    // erwartet Version 0
         } catch (RollbackException e) {
           System.out.println("Commit gescheitert: "
               + e.getCause().getClass().getSimpleName());
         }
       }
+
+      schritt("7. Entkoppelte Objekte: lesen, ändern, merge()");
+      PersonEntity grace = emf.callInTransaction(
+          em -> em.find(PersonEntity.class, 3L));
+      // Transaktion und PC sind vorbei: grace ist entkoppelt
+      System.out.println(grace.getLastName());   // geht: die Daten sind geladen
+      grace.setLastName("Murray Hopper");        // ändert nur das Java-Objekt
+      try {
+        grace.getLogins().size();                // nicht geladen
+      } catch (RuntimeException e) {             // Verhalten nicht festgelegt
+        System.out.println(e.getClass().getSimpleName());
+      }
+      emf.runInTransaction(em -> em.merge(grace));   // erst jetzt UPDATE
     }
   }
 

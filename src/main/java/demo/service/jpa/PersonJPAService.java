@@ -42,8 +42,8 @@ public class PersonJPAService implements PersonService,
   public void update(Person p) {
     emf.runInTransaction(em -> {
       PersonEntity e = find(em, p.getId());
-      e.setFirstName(p.getFirstName());   // DTO → Entity; kein UPDATE-Aufruf:
-      e.setLastName(p.getLastName());     // JPA erkennt die Änderung beim Commit
+      e.setFirstName(p.getFirstName());   // kein UPDATE nötig:
+      e.setLastName(p.getLastName());     // JPA erkennt es beim Commit
     });
   }
 

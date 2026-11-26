@@ -11,19 +11,29 @@ import jakarta.persistence.Persistence;
 
 import org.h2.jdbcx.JdbcDataSource;
 
-/** Legt eine Datenbank im Hauptspeicher (H2) an: person, app_user, girokonto, sparkonto. */
+import demo.service.jpa.PersonEntity;
+import demo.service.jpa.UserEntity;
+
+/** Legt eine Datenbank im Hauptspeicher (H2) an: person, app_user, checking_account, savings_account. */
 public final class DemoDatabase {
   private DemoDatabase() {
   }
 
-  public static DataSource create() {
+  /** Leere Datenbank im Hauptspeicher, noch ohne Tabellen. */
+  public static DataSource empty(String name) {
     JdbcDataSource ds = new JdbcDataSource();
     // DB_CLOSE_DELAY=-1: Die Datenbank lebt, solange der Server läuft
-    ds.setURL("jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1");
+    ds.setURL("jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1");
+    return ds;
+  }
+
+  /** Datenbank für JDBC: Schema und Daten per SQL-Skript (DDL von Hand). */
+  public static DataSource create() {
+    DataSource ds = empty("demo");
     try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
-      st.execute("DROP TABLE IF EXISTS girokonto");
-      st.execute("DROP TABLE IF EXISTS sparkonto");
-      st.execute("DROP SEQUENCE IF EXISTS konto_seq");
+      st.execute("DROP TABLE IF EXISTS checking_account");
+      st.execute("DROP TABLE IF EXISTS savings_account");
+      st.execute("DROP SEQUENCE IF EXISTS account_seq");
       st.execute("DROP TABLE IF EXISTS app_user");
       st.execute("DROP TABLE IF EXISTS person");
       // version braucht nur der PersonJPAService (@Version)
@@ -44,35 +54,67 @@ public final class DemoDatabase {
       st.execute("INSERT INTO app_user (login, password_hash, role, person_id) VALUES"
           + " ('ada', '-', 'ADMIN', 1), ('countess', '-', 'USER', 1),"
           + " ('grace', '-', 'USER', 3)");
-      // Vererbung als eine Tabelle pro konkreter Klasse: keine Tabelle für Konto,
+      // Vererbung als eine Tabelle pro konkreter Klasse: keine Tabelle für Account,
       // die gemeinsame Sequenz hält die ids über beide Tabellen eindeutig
-      st.execute("CREATE SEQUENCE konto_seq");
-      st.execute("CREATE TABLE girokonto ("
+      st.execute("CREATE SEQUENCE account_seq");
+      st.execute("CREATE TABLE checking_account ("
           + " id BIGINT PRIMARY KEY,"
           + " person_id BIGINT NOT NULL REFERENCES person,"
-          + " saldo DECIMAL(12,2) NOT NULL,"
+          + " balance DECIMAL(12,2) NOT NULL,"
           + " version INT DEFAULT 0 NOT NULL,"
-          + " dispo DECIMAL(12,2) NOT NULL)");
-      st.execute("CREATE TABLE sparkonto ("
+          + " overdraft_limit DECIMAL(12,2) NOT NULL)");
+      st.execute("CREATE TABLE savings_account ("
           + " id BIGINT PRIMARY KEY,"
           + " person_id BIGINT NOT NULL REFERENCES person,"
-          + " saldo DECIMAL(12,2) NOT NULL"
-          + " CONSTRAINT saldo_nicht_negativ CHECK (saldo >= 0),"
+          + " balance DECIMAL(12,2) NOT NULL"
+          + " CONSTRAINT balance_not_negative CHECK (balance >= 0),"
           + " version INT DEFAULT 0 NOT NULL,"
-          + " zinssatz DECIMAL(5,2) NOT NULL)");
-      st.execute("INSERT INTO girokonto (id, person_id, saldo, dispo) VALUES"
-          + " (NEXT VALUE FOR konto_seq, 1, 500.00, 1000.00)");     // id 1: Ada
-      st.execute("INSERT INTO sparkonto (id, person_id, saldo, zinssatz) VALUES"
-          + " (NEXT VALUE FOR konto_seq, 1, 2000.00, 1.50)");       // id 2: Ada
-      st.execute("INSERT INTO girokonto (id, person_id, saldo, dispo) VALUES"
-          + " (NEXT VALUE FOR konto_seq, 3, 100.00, 500.00)");      // id 3: Grace
+          + " interest_rate DECIMAL(5,2) NOT NULL)");
+      st.execute("INSERT INTO checking_account (id, person_id, balance, overdraft_limit)"
+          + " VALUES (NEXT VALUE FOR account_seq, 1, 500.00, 1000.00)");  // id 1: Ada
+      st.execute("INSERT INTO savings_account (id, person_id, balance, interest_rate)"
+          + " VALUES (NEXT VALUE FOR account_seq, 1, 2000.00, 1.50)");    // id 2: Ada
+      st.execute("INSERT INTO checking_account (id, person_id, balance, overdraft_limit)"
+          + " VALUES (NEXT VALUE FOR account_seq, 3, 100.00, 500.00)");   // id 3: Grace
     } catch (SQLException e) {
       throw new IllegalStateException(e);
     }
     return ds;
   }
 
-  /** JPA auf derselben Datenbank: Persistence Unit "db1" aus META-INF/persistence.xml. */
+  /**
+   * JPA ohne eigenes DDL-Skript: Hibernate legt das Schema aus den Annotationen
+   * selbst an (im SQL-Protokoll sichtbar) und schreibt die DDL zusätzlich in
+   * target/schema.sql.
+   */
+  public static EntityManagerFactory createEntityManagerFactoryWithSchema(DataSource dataSource) {
+    return Persistence.createEntityManagerFactory("db1", Map.of(
+        "jakarta.persistence.nonJtaDataSource", dataSource,
+        "hibernate.hbm2ddl.auto", "none",       // statt validate aus persistence.xml
+        "jakarta.persistence.schema-generation.database.action", "drop-and-create",
+        "jakarta.persistence.schema-generation.scripts.action", "create",
+        "jakarta.persistence.schema-generation.scripts.create-target", "target/schema.sql",
+        "hibernate.hbm2ddl.schema-generation.script.append", "false"));
+  }
+
+  /** Dieselben Beispieldaten wie in create() – diesmal per persist(). */
+  public static void insertData(EntityManagerFactory emf) {
+    emf.runInTransaction(em -> {
+      PersonEntity ada = new PersonEntity("Ada", "Lovelace");
+      PersonEntity alan = new PersonEntity("Alan", "Turing");
+      PersonEntity grace = new PersonEntity("Grace", "Hopper");
+      UserEntity[] logins = {new UserEntity("ada", "-", "ADMIN"),
+          new UserEntity("countess", "-", "USER"), new UserEntity("grace", "-", "USER")};
+      ada.addLogin(logins[0]);
+      ada.addLogin(logins[1]);
+      grace.addLogin(logins[2]);
+      for (Object o : new Object[] {ada, alan, grace, logins[0], logins[1], logins[2]}) {
+        em.persist(o);
+      }
+    });
+  }
+
+  /** JPA auf einer schon angelegten Datenbank: Persistence Unit "db1" aus META-INF/persistence.xml. */
   public static EntityManagerFactory createEntityManagerFactory(DataSource dataSource) {
     return Persistence.createEntityManagerFactory("db1",
         Map.of("jakarta.persistence.nonJtaDataSource", dataSource));

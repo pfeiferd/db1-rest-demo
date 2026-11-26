@@ -1,7 +1,7 @@
 package demo;
 
 import java.util.Set;
-import javax.sql.DataSource;
+import jakarta.persistence.EntityManagerFactory;
 
 import jakarta.ws.rs.core.Application;
 
@@ -23,11 +23,18 @@ public class DemoApplication extends Application {
   private final Set<Object> singletons;
 
   public DemoApplication() {
-    DataSource dataSource = DemoDatabase.create();
     // Datenzugriff mit JDBC oder - mit -Dpersistence=jpa - mit JPA
-    PersonService datenzugriff = "jpa".equals(System.getProperty("persistence"))
-        ? new PersonJPAService(DemoDatabase.createEntityManagerFactory(dataSource))
-        : new PersonJDBCService(dataSource);
+    PersonService datenzugriff;
+    if ("jpa".equals(System.getProperty("persistence"))) {
+      // JPA legt das Schema selbst an, die Daten kommen per persist()
+      EntityManagerFactory emf =
+          DemoDatabase.createEntityManagerFactoryWithSchema(DemoDatabase.empty("demo"));
+      DemoDatabase.insertData(emf);
+      datenzugriff = new PersonJPAService(emf);
+    } else {
+      // JDBC: Schema und Daten per SQL-Skript
+      datenzugriff = new PersonJDBCService(DemoDatabase.create());
+    }
     // Die Delegationskette der Mini-Studie, mit Write-Through-Cache
     PersonService personService =
         new PersonRestService(

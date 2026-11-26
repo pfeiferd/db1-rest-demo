@@ -8,7 +8,7 @@ import demo.service.dto.DTO;
  * auflösen; das übernimmt der Dienst.
  */
 public interface ConversionService<D extends DTO, E> {
-  /** Neue, noch nicht gespeicherte Entity – id und Version vergibt JPA. */
+  /** Neue Entity: id und Version vergibt JPA. */
   E fromDTO(D d);
 
   D toDTO(E e);
